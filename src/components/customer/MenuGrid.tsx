@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, X, Flame, ChevronRight } from 'lucide-react';
+import { Search, X, Flame, ChevronRight, ChevronLeft } from 'lucide-react';
 import MenuItemCard from './MenuItemCard';
 import { useStore } from '@/store/useStore';
 
@@ -38,10 +38,39 @@ export default function MenuGrid() {
     setSelectedCategory,
   } = useStore();
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
   const popularItems = useMemo(
     () => menuItems.filter((item) => item.isPopular && item.available),
     [menuItems]
   );
+
+  const checkScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 10);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
+  };
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    checkScroll();
+    el.addEventListener('scroll', checkScroll, { passive: true });
+    window.addEventListener('resize', checkScroll);
+    return () => {
+      el.removeEventListener('scroll', checkScroll);
+      window.removeEventListener('resize', checkScroll);
+    };
+  }, [popularItems]);
+
+  const scrollBy = (direction: 'left' | 'right') => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: direction === 'left' ? -320 : 320, behavior: 'smooth' });
+  };
 
   const filteredItems = useMemo(() => {
     let items = menuItems;
@@ -179,7 +208,7 @@ export default function MenuGrid() {
           ))}
         </motion.div>
 
-        {/* Popular Items - Horizontal Scroll (only when no filter) */}
+        {/* Popular Items - Horizontal Scroll with arrows (only when no filter) */}
         {showPopular && popularItems.length > 0 && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -187,20 +216,61 @@ export default function MenuGrid() {
             transition={{ delay: 0.25 }}
             className="mb-12"
           >
-            <div className="flex items-center gap-2 mb-5">
-              <Flame className="h-5 w-5 text-[#FF6B00]" />
-              <h3 className="text-lg font-semibold">Most Popular</h3>
-              <div className="flex-1 h-px bg-white/[0.06]" />
-            </div>
-            <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide">
-              {popularItems.map((item, i) => (
-                <div
-                  key={item.id}
-                  className="w-[260px] sm:w-[280px] shrink-0"
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <Flame className="h-5 w-5 text-[#FF6B00]" />
+                <h3 className="text-lg font-semibold">Most Popular</h3>
+                <div className="h-px bg-white/[0.06] w-[60px] ml-2" />
+              </div>
+              {/* Scroll Navigation Arrows */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => scrollBy('left')}
+                  disabled={!canScrollLeft}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all duration-200 ${
+                    canScrollLeft
+                      ? 'bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-[#FF6B00]/30'
+                      : 'bg-transparent border-white/[0.03] text-white/20 cursor-not-allowed'
+                  }`}
                 >
-                  <MenuItemCard item={item} index={i} />
-                </div>
-              ))}
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => scrollBy('right')}
+                  disabled={!canScrollRight}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all duration-200 ${
+                    canScrollRight
+                      ? 'bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-[#FF6B00]/30'
+                      : 'bg-transparent border-white/[0.03] text-white/20 cursor-not-allowed'
+                  }`}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <div className="relative group/popular">
+              {/* Left fade */}
+              {canScrollLeft && (
+                <div className="absolute left-0 top-0 bottom-4 w-8 bg-gradient-to-r from-[#0F0F0F] to-transparent z-10 pointer-events-none" />
+              )}
+              {/* Right fade */}
+              {canScrollRight && (
+                <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-[#0F0F0F] to-transparent z-10 pointer-events-none" />
+              )}
+              <div
+                ref={scrollRef}
+                className="flex gap-5 overflow-x-auto pb-4 scroll-smooth"
+                style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,107,0,0.3) transparent' }}
+              >
+                {popularItems.map((item, i) => (
+                  <div
+                    key={item.id}
+                    className="w-[260px] sm:w-[280px] shrink-0"
+                  >
+                    <MenuItemCard item={item} index={i} />
+                  </div>
+                ))}
+              </div>
             </div>
           </motion.div>
         )}
