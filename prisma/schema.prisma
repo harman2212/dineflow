@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // For migrations (bypasses connection pooling)
+}
+
+model MenuItem {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  price       Float
+  category    String
+  image       String
+  available   Boolean  @default(true)
+  isPopular   Boolean  @default(false)
+  rating      Float    @default(4.5)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Order {
+  id            String   @id @default(cuid())
+  items         String
+  total         Float
+  status        String   @default("pending")
+  customerName  String
+  customerPhone String
+  tableNumber   String?
+  createdAt     DateTime @default(now())
+}
+
+model Reservation {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String
+  date      String
+  time      String
+  guests    Int
+  notes     String?
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+}

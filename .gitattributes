@@ -1,0 +1,22 @@
+# Ensure GitHub Linguist detects all languages used in this project
+
+# Prisma
+prisma/schema.prisma linguist-language=Prisma
+*.prisma linguist-language=Prisma
+
+# Shell scripts
+*.sh linguist-language=Shell
+
+# ESM modules
+*.mjs linguist-language=JavaScript
+
+# Keep skills directory visible (don't mark as vendored)
+skills/** linguist-vendored=false
+.zscripts/** linguist-vendored=false
+
+# Keep docs detectable
+*.md linguist-detectable=true
+*.mdx linguist-detectable=true
+
+# Config files
+*.json linguist-detectable=true
